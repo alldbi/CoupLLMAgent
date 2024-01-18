@@ -15,11 +15,11 @@ LLM agent to play the Coup game
 
 `python3 coup.py`
 
-## Win rate against random bots (computed over 20 rounds)
+## Win rate against random bots (computed over >10 rounds)
 
 | # of players | win rate of random bot | win rate of LLM Agent |
 |--------------|------------------------|-----------------------|
 | 5            |  20%                   |  75.0%                |
 | 4            | 25%                    |  72.2%                     |
-|3             | 33.3%                  |                       |
+|3             | 33.3%                  |  63.6%                     |
 | 2            | 50%                    |                        |

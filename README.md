@@ -19,4 +19,4 @@ LLM agent to play the Coup game
 
 | # of players | win rate of random bot | win rate of LLM Agent |
 |--------------|------------------------|-----------------------|
-| 5            |  20%                   | |
+| 5            |  20%                   |  75.0% |

@@ -15,7 +15,7 @@ LLM agent to play the Coup game
 
 `python3 coup.py`
 
-## Win rate against random bots with 20 rounds of playing
+## Win rate against random bots (computed over 20 rounds)
 
 | # of players | win rate of random bot | win rate of LLM Agent |
 |--------------|------------------------|-----------------------|

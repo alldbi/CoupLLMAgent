@@ -29,11 +29,6 @@ from src.models.players.prompts import (choose_action_chain,
                                         remove_chain,
                                         exchange_chain, counter_chain)
 
-# from src.models.players.chains import (llm_determine_challenge,
-#                                        llm_determine_counter,
-#                                        llm_remove_card,
-#                                        llm_choose_exchange_cards, )
-
 
 class LLMAgent(BasePlayer):
     is_ai: bool = True
@@ -46,20 +41,7 @@ class LLMAgent(BasePlayer):
         available_actions = self.available_actions()
 
         print_text(f"[bold magenta]{self}[/] is thinking...", with_markup=True)
-        # time.sleep(1)
 
-        # Coup is only option
-        # if len(available_actions) == 1:
-        #     # TODO write another prompt for coup action 
-        #     player = random.choice(other_players)
-        #     return available_actions[0], player
-
-        # # Pick any other random choice (might be a bluff)
-        # target_action = random.choice(available_actions)
-        # target_player = None
-
-        # if target_action.requires_target:
-        #     target_player = random.choice(other_players)
         target_action, target_player = choose_action(self, available_actions, other_players,
                                                      revealed_cards, deck_len, treasury)
 
@@ -93,7 +75,7 @@ class LLMAgent(BasePlayer):
     def choose_exchange_cards(self, exchange_cards: list[Card], game) -> Tuple[Card, Card]:
         """Perform the exchange action. Pick which 2 cards to send back to the deck"""
         first_len = len(self.cards)
-        old_cards = self.cards
+        old_cards = self.cards.copy()
 
         self.cards += exchange_cards
         out_cards, in_cards = choose_exchange_cards(self, game)
@@ -165,17 +147,33 @@ Remained Cards in the Deck: {deck_len}
 
     select_action_result = choose_action_chain.invoke(input={'number_of_active_players': len(other_players),
                                                              'state': game_state_str,
-                                                             'available_actions': available_actions_str})['text']
+                                                             'available_actions': available_actions_str})[
+        'text'].lower()
     try:
         select_action_result = eval(select_action_result)
-    except Exception as e:
-        select_action_result = eval(
-            select_action_result[select_action_result.find('('):select_action_result.find(')') + 1])
+    except:
+        try:
+            select_action_result = eval(
+                select_action_result[select_action_result.find('('):select_action_result.find(')') + 1])
+        except:
+            select_action_result = (
+            int(select_action_result[select_action_result.find('(') + 1:select_action_result.find(',')].strip(
+                ' !@#$%^&*()_./-abcdefghijklmnopqrstuvwxyz')),)
 
-    selected_action_index = select_action_result[0] if type(select_action_result[0]) == int else int(
-        select_action_result[0].strip(' ./-abcdefghijklmnopqrstuvwxyz'))
+    try:
+        selected_action_index = select_action_result[0]
+        if type(selected_action_index) == str:
+            selected_action_index = int(select_action_result[0].strip(' !@#$%^&*()_./-abcdefghijklmnopqrstuvwxyz'))
+    except:
+        # select a safe action in case of having trouble
+        for i, a in enumerate(actions):
+            if 'Bluff' in a['action_str']:
+                continue
+            selected_action_index = i
+            break
+
     # print('LLM chosen action:', str(actions[selected_action_index]['action']),
-    #       '\nReason:', select_action_result[1], 
+    #       '\nReason:', select_action_result[1],
     #       '\nRisk:', select_action_result[2])
 
     return actions[selected_action_index]['action'], actions[selected_action_index]['target']
@@ -262,12 +260,12 @@ Opponent's influences(Cards): {len(player_under_countering.cards)}
 """
     action_str = f"{player_under_countering} "
     action = player_under_countering.last_action
-    target_player = player_under_countering.last_target
-    target_str = ""
-    if target_player is not None and target_player.name == player_countering.name:
-        target_str = "you"
-    else:
-        target_str = "one of your opponent players"
+    # target_player = player_under_countering.last_target
+    # target_str = ""
+    # if target_player is not None and target_player.name == player_countering.name:
+    target_str = "you"
+    # else:
+    #     target_str = "one of your opponent players"
 
     match action.action_type:
         case ActionType.foreign_aid:
@@ -321,7 +319,7 @@ Your coins: {player.coins}
                                           'cards_index': '\n'.join(cards_index)
                                           })['text']
 
-    result = result.strip().lower()[-7:]
+    result = result.strip().lower()[-10:]
 
     out_cards = []
     in_cards = []
